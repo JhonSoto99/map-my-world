@@ -3,11 +3,11 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session, create_engine
 
+SQLITE_NAME: str = "db.sqlite3"
+SQLITE_URL: str = f"sqlite:///{SQLITE_NAME}"
 
-sqlite_name = "db.sqlite3"
-sqlite_url = f"sqlite:///{sqlite_name}"
+engine = create_engine(SQLITE_URL)
 
-engine = create_engine(sqlite_url)
 
 def get_session():
     with Session(engine) as session:
