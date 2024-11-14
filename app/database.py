@@ -12,6 +12,14 @@ engine = create_engine(SQLITE_URL, echo=True)
 
 
 def get_session():
+    """
+    Provides a database session.
+
+    This function opens a session, yields it, and ensures it is closed after use.
+
+    Yields:
+        Session: A database session.
+    """
     with Session(engine) as session:
         yield session
 
