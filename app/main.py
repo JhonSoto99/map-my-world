@@ -4,6 +4,7 @@ from app.database import SQLModel, engine
 from app.exception_handlers import exception_container
 from app.routers.categories import categories_router
 from app.routers.locations import locations_router
+from app.routers.recommendations import recommendations_router
 from app.routers.reviews import reviews_router
 
 SQLModel.metadata.create_all(engine)
@@ -20,8 +21,14 @@ app.include_router(
 )
 app.include_router(
     reviews_router,
-    prefix=f"{API_V1_PREFIX}/location-category-reviewed",
+    prefix=f"{API_V1_PREFIX}/reviews",
     tags=["Reviews"],
+)
+
+app.include_router(
+    recommendations_router,
+    prefix=f"{API_V1_PREFIX}/recommendations",
+    tags=["Recommendations"],
 )
 
 exception_container(app)

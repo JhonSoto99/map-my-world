@@ -77,7 +77,7 @@ class LocationCategoryReviewedBase(SQLModel):
         foreign_key="category.id", description="ID of the related category"
     )
     last_reviewed: Optional[datetime] = Field(
-        default_factory=datetime.utcnow,
+        default=None,
         description="Date of the last review of the relationship",
     )
 
