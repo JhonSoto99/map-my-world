@@ -3,14 +3,18 @@ from typing import Type, TypeVar
 
 from sqlmodel import Session, SQLModel, select
 
-from app.exception_handlers import (CreateEntityError,
-                                    CreateLocationCategoryReviewedError)
+from app.exception_handlers import (
+    CreateEntityError,
+    CreateLocationCategoryReviewedError,
+)
 from app.models import LocationCategoryReviewed, LocationCategoryReviewedBase
 
 T = TypeVar("T", bound=SQLModel)
 
 
-def create_entity(session: Session, base_entity: SQLModel, model_class: Type[T]):
+def create_entity(
+    session: Session, base_entity: SQLModel, model_class: Type[T]
+):
     """
     Creates and saves an entity in the database.
 
@@ -42,7 +46,9 @@ def create_entity(session: Session, base_entity: SQLModel, model_class: Type[T])
         raise CreateEntityError(f"Error: {e}") from e
 
 
-def get_entity_or_404(entity_class: Type[SQLModel], entity_id: int, session: Session):
+def get_entity_or_404(
+    entity_class: Type[SQLModel], entity_id: int, session: Session
+):
     """
     Retrieves an entity by its ID or raises an error if not found.
 
@@ -68,6 +74,23 @@ def get_entity_or_404(entity_class: Type[SQLModel], entity_id: int, session: Ses
 def save_review_location_category(
     session: Session, location_category_reviewed: LocationCategoryReviewedBase
 ):
+    """
+    Saves or updates a review record for a specific location and category.
+
+    - If a record exists for the provided `location_id` and `category_id`,
+        updates the `last_reviewed` date.
+    - If no record exists, creates a new one with the provided details.
+
+    **Parameters:**
+    - session (Session): Database session for executing queries.
+    - location_category_reviewed (LocationCategoryReviewedBase): Data for location-category review.
+
+    **Returns:**
+    - LocationCategoryReviewed: The saved or updated review record.
+
+    Raises:
+    - Exception: Any error during database operations.
+    """
     location_id: int = location_category_reviewed.location_id
     category_id: int = location_category_reviewed.category_id
 
@@ -78,17 +101,25 @@ def save_review_location_category(
         )
     ).first()
 
-    if not record:
-        record = LocationCategoryReviewed(**location_category_reviewed.dict())
-        session.add(record)
+    try:
+        if not record:
+            record = LocationCategoryReviewed(
+                **location_category_reviewed.dict()
+            )
+            session.add(record)
 
-    else:
-        last_reviewed: datetime = location_category_reviewed.last_reviewed
-        record.last_reviewed = last_reviewed if last_reviewed else datetime.utcnow()
+        else:
+            last_reviewed: datetime = location_category_reviewed.last_reviewed
+            record.last_reviewed = (
+                last_reviewed if last_reviewed else datetime.utcnow()
+            )
 
-    session.commit()
-    session.refresh(record)
-    return record
+        session.commit()
+        session.refresh(record)
+        return record
+    except Exception as e:
+        session.rollback()
+        raise CreateEntityError(f"Error: {e}") from e
 
 
 def get_unreviewed_recommendations(session: Session):
