@@ -67,7 +67,7 @@ class Category(CategoryBase, table=True):
 class LocationCategoryReviewedBase(SQLModel):
     """
     Base model representing the relationship between a location and a category,
-    with an optional last review date.
+    with a review date.
     """
 
     location_id: int = Field(
@@ -80,6 +80,16 @@ class LocationCategoryReviewedBase(SQLModel):
         default_factory=datetime.utcnow,
         description="Date of the last review of the relationship",
     )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "category_id": 1,
+                "location_id": 2,
+                "last_reviewed": "2024-11-14T11:33:01.467000",
+            }
+        }
+    }
 
 
 class LocationCategoryReviewed(LocationCategoryReviewedBase, table=True):

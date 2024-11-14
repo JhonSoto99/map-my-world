@@ -3,7 +3,8 @@ from typing import Type, TypeVar
 
 from sqlmodel import Session, SQLModel, select
 
-from app.exception_handlers import CreateEntityError
+from app.exception_handlers import (CreateEntityError,
+                                    CreateLocationCategoryReviewedError)
 from app.models import LocationCategoryReviewed
 
 T = TypeVar("T", bound=SQLModel)
@@ -13,8 +14,9 @@ def create_entity(session: Session, base_entity: SQLModel, model_class: Type[T])
     """
     Creates and saves an entity in the database.
 
-    Converts a base entity to the specified model class, inserts it into the database,
-    commits the transaction, and returns the created entity with a populated ID.
+    Converts a base entity to the specified model class,
+    inserts it into the database,commits the transaction,
+    and returns the created entity with a populated ID.
 
     Parameters:
     - session (Session): SQLAlchemy session for database operations.
@@ -38,6 +40,29 @@ def create_entity(session: Session, base_entity: SQLModel, model_class: Type[T])
     except Exception as e:
         session.rollback()
         raise CreateEntityError(f"Error: {e}") from e
+
+
+def get_entity_or_404(entity_class: Type[SQLModel], entity_id: int, session: Session):
+    """
+    Retrieves an entity by its ID or raises an error if not found.
+
+    Parameters:
+    - entity_class (Type[SQLModel]): The model class to query.
+    - entity_id (int): The ID of the entity.
+    - session (Session): Database session.
+
+    Returns:
+    - SQLModel: The found entity.
+
+    Raises:
+    - CreateLocationCategoryReviewedError: If the entity is not found.
+    """
+    entity = session.get(entity_class, entity_id)
+    if not entity:
+        raise CreateLocationCategoryReviewedError(
+            f"{entity_class.__name__} with id {entity_id} not found."
+        )
+    return entity
 
 
 def get_unreviewed_recommendations(session: Session):
