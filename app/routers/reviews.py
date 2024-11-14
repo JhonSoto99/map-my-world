@@ -1,21 +1,26 @@
 from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
 
-from app.crud import create_entity, get_entity_or_404
 from app.database import get_session
-from app.models import (Category, Location, LocationCategoryReviewed,
-                        LocationCategoryReviewedBase)
+from app.models import (
+    Category,
+    Location,
+    LocationCategoryReviewed,
+    LocationCategoryReviewedBase,
+)
+from app.services import get_entity_or_404, save_review_location_category
 
 reviews_router = APIRouter()
 
 
 @reviews_router.post(
-    "/", response_model=LocationCategoryReviewed, status_code=status.HTTP_201_CREATED
+    "/",
+    response_model=LocationCategoryReviewed,
+    status_code=status.HTTP_201_CREATED,
 )
-def create_location_category_reviewed(
+def review_location_category(
     location_category_reviewed: LocationCategoryReviewedBase,
     session: Session = Depends(get_session),
-    validate_entity_id: Session = Depends(get_entity_or_404),
 ):
     """
     Resource to create the relationship between a location and a category with a review date.
@@ -80,10 +85,9 @@ def create_location_category_reviewed(
     Internal Server Error
     ```
     """
+
     get_entity_or_404(Location, location_category_reviewed.location_id, session)
     get_entity_or_404(Category, location_category_reviewed.category_id, session)
 
-    location_category_reviewed: LocationCategoryReviewed = create_entity(
-        session, location_category_reviewed, LocationCategoryReviewed
-    )
-    return location_category_reviewed
+    review = save_review_location_category(session, location_category_reviewed)
+    return review

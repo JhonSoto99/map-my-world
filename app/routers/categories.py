@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
 
-from app.crud import create_entity
 from app.database import get_session
 from app.models import Category, CategoryBase
+from app.services import create_entity
 
 categories_router = APIRouter()
 
@@ -13,7 +13,9 @@ categories_router = APIRouter()
     response_model=Category,
     status_code=status.HTTP_201_CREATED,
 )
-def create_category(category: CategoryBase, session: Session = Depends(get_session)):
+def create_category(
+    category: CategoryBase, session: Session = Depends(get_session)
+):
     """
     Resource to create a category.
 

@@ -5,7 +5,7 @@ from sqlmodel import Session, SQLModel, select
 
 from app.exception_handlers import (CreateEntityError,
                                     CreateLocationCategoryReviewedError)
-from app.models import LocationCategoryReviewed
+from app.models import LocationCategoryReviewed, LocationCategoryReviewedBase
 
 T = TypeVar("T", bound=SQLModel)
 
@@ -65,13 +65,54 @@ def get_entity_or_404(entity_class: Type[SQLModel], entity_id: int, session: Ses
     return entity
 
 
+def save_review_location_category(
+    session: Session, location_category_reviewed: LocationCategoryReviewedBase
+):
+    location_id: int = location_category_reviewed.location_id
+    category_id: int = location_category_reviewed.category_id
+
+    record = session.exec(
+        select(LocationCategoryReviewed).where(
+            LocationCategoryReviewed.location_id == location_id,
+            LocationCategoryReviewed.category_id == category_id,
+        )
+    ).first()
+
+    if not record:
+        record = LocationCategoryReviewed(**location_category_reviewed.dict())
+        session.add(record)
+
+    else:
+        last_reviewed: datetime = location_category_reviewed.last_reviewed
+        record.last_reviewed = last_reviewed if last_reviewed else datetime.utcnow()
+
+    session.commit()
+    session.refresh(record)
+    return record
+
+
 def get_unreviewed_recommendations(session: Session):
+    """
+    Retrieves the first 10 location-category reviews that are either not reviewed
+    or have not been reviewed in the last 30 days.
+
+    **Parameters:**
+    - session (Session): The database session.
+
+    **Returns:**
+    - List[LocationCategoryReviewed]: A list of unreviewed location-category relationships.
+
+    """
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     statement = (
         select(LocationCategoryReviewed)
         .where(
             (LocationCategoryReviewed.last_reviewed == None)
             | (LocationCategoryReviewed.last_reviewed < thirty_days_ago)
+        )
+        .order_by(
+            LocationCategoryReviewed.last_reviewed.is_(None).desc(),
+            LocationCategoryReviewed.last_reviewed.asc(),
         )
         .limit(10)
     )
